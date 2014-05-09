@@ -1,0 +1,14 @@
+Source: mkos-overo
+Section: devel
+Priority: extra
+Maintainer: Bill Gatliff <bgat@billgatliff.com>
+Build-Depends: debhelper (>= 7.0.50~)
+Standards-Version: 3.9.4
+Vcs-Git: https://github.com/bgat/mkos-overo.git
+Vcs-Browser: https://github.com/bgat/mkos-overo.git
+
+Package: mkos-overo
+Architecture: all
+Depends: multistrap, ${misc:Depends}
+Description: Compose filesystem images for Gumstix Overo
+ Composes a filesystem image for the Gumstix Overo target.

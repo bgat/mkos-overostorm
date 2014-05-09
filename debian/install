@@ -1,0 +1,2 @@
+mkos-overo usr/bin
+default.mstrap preferences usr/share/mkos-overo
