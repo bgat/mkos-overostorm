@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e -u
 
-# Creates a (small) SD card image for the Gumstix Overo.
+# Creates a small SD card image for the Gumstix Overo.
 #
 # In practice, the Pragmatux tools will auto-expand this image during
 # first boot, to fill the MMC device containg it.  The image emitted
