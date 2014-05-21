@@ -25,8 +25,20 @@ DEFAULT_DEVICE=device-overo
 DEFAULT_IMAGE=ptux.img
 DEFAULT_SIZE=512M
 
+USAGE="${0##./}"' [-C] [-c config] [package]
+  Options:
+    -C          print default config template to stdout and exit
+    -c config   use file <config> as alternate config template
+    -n image    use <image> as the output image filename
+
+  Environment:
+    The command line takes precedence over the environment.
+    MKOS_CONFIG  - multistrap configuration
+    MKOS_PACKAGE - root package
+'
+
 fatal () {
-	echo error: "$@" >&2
+	echo "$@" >&2
 	exit 1
 }
 
@@ -38,12 +50,12 @@ fix_owner () {
 while [ "$#" != 0 ]
 do
 	case "$1,${2-}" in
-		-f,?*)
+		-c,?*)
 			CONFIG="$2"
 			shift
 			shift
 			;;
-		-F,*)
+		-C,*)
 			cat ${MKOS_CONFIG:-$DEFAULT_CONFIG}
 			exit
 			;;
@@ -57,14 +69,14 @@ do
 			exit
 			;;
 		-*)
-			fatal usage
+			fatal "$USAGE"
 			;;
 		*)
 			if [ -z "${DEVICE:-}" ]; then
 				DEVICE="$1"
 				shift
 			else
-				fatal usage
+				fatal "$USAGE"
 			fi
 			;;
 	esac
