@@ -121,10 +121,13 @@ mount ${NODE}p1 $TEMPMOUNT/boot
 
 multistrap -f $TEMPCONFIG -d $TEMPMOUNT
 
+# TODO: make this name follow $IMAGE
+tar czf ptux.tgz -C $TEMPMOUNT .
+fix_owner ptux.tgz
+
 umount $TEMPMOUNT/boot
 umount $TEMPMOUNT
 kpartx -d $IMAGE >/dev/null
-tar czf ptux.tgz $TEMPMOUNT # TODO: make this name follow $IMAGE
 rm -r $TEMPMOUNT
 rm $TEMPCONFIG
 
