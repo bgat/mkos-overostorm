@@ -13,8 +13,8 @@ set -e -u
 # For reference, this script creates a disk image similar to what you
 # would get with the following commands:
 #
-#   sudo dd if=/dev/zero of=${DISK} bs=1M count=512
-#   sudo sfdisk --in-order --Linux --unit M ${DISK} <<-__EOF__
+#   sudo dd if=/dev/zero of=${DEFAULT_IMAGE} bs=1M count=${DEFAULT_SIZE}
+#   sudo sfdisk --in-order --Linux --unit M ${DEFAULT_IMAGE} <<-__EOF__
 #   1,48,0xE,*
 #   ,,,-
 #   __EOF__
@@ -23,7 +23,7 @@ set -e -u
 DEFAULT_CONFIG=/usr/share/mkos-overo/default.mstrap
 DEFAULT_DEVICE=device-overo
 DEFAULT_IMAGE=ptux.img
-DEFAULT_SIZE=512M
+DEFAULT_SIZE=1024M
 
 USAGE="${0##./}"' [-C] [-c config] [package]
   Options:
@@ -124,6 +124,7 @@ multistrap -f $TEMPCONFIG -d $TEMPMOUNT
 umount $TEMPMOUNT/boot
 umount $TEMPMOUNT
 kpartx -d $IMAGE >/dev/null
+tar czf ptux.tgz $TEMPMOUNT # TODO: make this name follow $IMAGE
 rm -r $TEMPMOUNT
 rm $TEMPCONFIG
 
