@@ -1,14 +1,17 @@
 #!/bin/sh
 set -e -u
 
-# Creates a small SD card image for the Gumstix Overo.
+# Creates a small SD card image for the Overo platform
+#
+# NOTE: At present, the image this tool creates is known to not
+# always be bootable. Until further notice and if necessary,
+# recreate the image by hand using the notes in this script
+# and the directory tarball.
 #
 # In practice, the Pragmatux tools will auto-expand this image during
 # first boot, to fill the MMC device containg it.  The image emitted
 # by this tool is therefore kept as small as possible to facilitate
 # low-bandwidth distribution.
-#
-# TODO: what if the developer doesn't want auto-expansion?
 #
 # For reference, this script creates a disk image similar to what you
 # would get with the following commands:
@@ -23,7 +26,10 @@ set -e -u
 DEFAULT_CONFIG=/usr/share/mkos-overo/default.mstrap
 DEFAULT_DEVICE=device-overo
 DEFAULT_IMAGE=ptux.img
-DEFAULT_SIZE=1024M
+DEFAULT_ROOTFSTYPE=ext3
+
+# TODO: for now, assume "M" but it'd be nice to parse this for "K", "G", and so on
+DEFAULT_SIZE=512
 
 USAGE="${0##./}"' [-C] [-c config] [package]
   Options:
@@ -40,11 +46,6 @@ USAGE="${0##./}"' [-C] [-c config] [package]
 fatal () {
 	echo "$@" >&2
 	exit 1
-}
-
-fix_owner () {
-	# If called under sudo, set ownership to sudo's caller
-	test "${SUDO_UID-}" && chown ${SUDO_UID-}:${SUDO_GID} "$@"
 }
 
 while [ "$#" != 0 ]
@@ -82,52 +83,71 @@ do
 	esac
 done
 
-# TODO: unfortunately, we need real root for now.
-# TODO: but soon, we'll be able to use guestfish...
-
-test "$(id -u)" = "0" || fatal "must run as root"
 : ${CONFIG:=${MKOS_CONFIG:-$DEFAULT_CONFIG}}
 test -r $CONFIG || fatal cannot read $CONFIG
 : ${DEVICE:=${MKOS_DEVICE:-$DEFAULT_DEVICE}}
 : ${IMAGE:=${MKOS_IMAGE:-$DEFAULT_IMAGE}}
+: ${ROOTFSTYPE:=${MKOS_ROOTFSTYPE:-$DEFAULT_ROOTFSTYPE}}
+
+# TODO: assumes megabytes for DEFAULT_SIZE; fix this
+# TODO: it'd be nice if MKOS_SIZE could use "M", etc. as well
+#       (truncate can deal with the M, but sfdisk can't)
+: ${SIZE:=${MKOS_SIZE:-`echo ${DEFAULT_SIZE}*1024*1024 | bc`}}
+
+# TODO: this probably needs bullet-proofing
+TARFILE=`echo $IMAGE | sed s/img/tgz/g`
+
 test ! -e $IMAGE || fatal "refusing to overwrite $IMAGE"
+test ! -e $TARFILE || fatal "refusing to overwrite $TARFILE"
 
 cleanup () {
-	test -n "$TEMPMOUNT" && umount $TEMPMOUNT/boot >/dev/null || :
-	test -n "$TEMPMOUNT" && umount $TEMPMOUNT >/dev/null || :
-	kpartx -d $IMAGE >/dev/null || :
-	rm -rf $TEMPCONFIG $TEMPMOUNT $IMAGE
+	rm -rf $TEMPCONFIG $TEMPMOUNT $IMAGE $TARFILE
 }
 trap "cleanup; exit" INT TERM EXIT
 
 TEMPCONFIG=$(mktemp --tmpdir mkos-overo.mstrap.XXXXXXXX)
 sed -e "s/{{device-package}}/$DEVICE/" $CONFIG >$TEMPCONFIG
 TEMPMOUNT=$(mktemp -d --tmpdir mkos-overo.mount.XXXXXXXX)
-truncate --size=$DEFAULT_SIZE $IMAGE
-fix_owner $IMAGE
-parted -s $IMAGE -- \
-	mklabel msdos \
-	mkpart primary 1 50 \
-	mkpart primary 50 -1 \
-	>/dev/null
-TMP=$(kpartx -av $IMAGE | head -1 | awk '{print $3}')
-NODE=/dev/mapper/${TMP%p*}
-mkfs.vfat -n boot -F 16 ${NODE}p1 >/dev/null 2>&1
-parted -s $IMAGE -- set 1 lba on >/dev/null
-mkfs.ext4 ${NODE}p2 >/dev/null 2>&1 #TODO options?
-mount ${NODE}p2 $TEMPMOUNT
-mkdir $TEMPMOUNT/boot
-mount ${NODE}p1 $TEMPMOUNT/boot
 
-multistrap -f $TEMPCONFIG -d $TEMPMOUNT
+GUESTFISH=/usr/bin/guestfish
+MULTISTRAP=/usr/sbin/multistrap
 
-# TODO: make this name follow $IMAGE
-tar czf ptux.tgz -C $TEMPMOUNT .
-fix_owner ptux.tgz
+$MULTISTRAP -f $TEMPCONFIG -d $TEMPMOUNT
 
-umount $TEMPMOUNT/boot
-umount $TEMPMOUNT
-kpartx -d $IMAGE >/dev/null
+# don't change these unless you know what you're doing...
+SFDISK=/sbin/sfdisk
+SECTORBYTES=512
+SECTORSPERCYLINDER=63
+HEADS=255
+
+CYLINDERS=`echo $SIZE/$HEADS/$SECTORSPERCYLINDER/$SECTORBYTES | bc`
+
+truncate --size=$SIZE $IMAGE
+
+# TODO: the "11" below is the number of cylinders (?) of the first
+#       partition, which is equivalent to its size; do we want
+#       to make this configurable? ratiometric to the overall size?
+PART1CYL=11
+{ echo ,$PART1CYL,0xc,*; echo ,,,-; } \
+    | $SFDISK -D -H $HEADS -S $SECTORSPERCYLINDER -C $CYLINDERS $IMAGE > /dev/null
+
+# TODO: what if the copy-in doesn't fit?
+$GUESTFISH -a $IMAGE <<__EOF__
+run
+list-partitions
+mkfs-opts msdos /dev/vda1
+mkfs-opts $ROOTFSTYPE /dev/vda2
+mount /dev/vda2 /
+mkdir /boot
+mount /dev/vda1 /boot
+lcd $TEMPMOUNT
+copy-in . /
+ll /boot
+ll /
+__EOF__
+
+tar czf $TARFILE -C $TEMPMOUNT .
+
 rm -r $TEMPMOUNT
 rm $TEMPCONFIG
 
