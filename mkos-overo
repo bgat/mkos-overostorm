@@ -133,7 +133,7 @@ truncate --size=$SIZE $IMAGE
 #       to make this configurable? ratiometric to the overall size?
 PART1CYL=11
 { echo ,$PART1CYL,0xc,*; echo ,,,-; } \
-    | $SFDISK -D -H $HEADS -S $SECTORSPERCYLINDER -C $CYLINDERS $IMAGE > /dev/null
+    | $SFDISK -D -H $HEADS -S $SECTORSPERCYLINDER -C $CYLINDERS $IMAGE 2>&1 > /dev/null
 
 $GUESTFISH -a $IMAGE <<__EOF__
 run
@@ -145,7 +145,7 @@ mkdir /boot
 mount /dev/vda1 /boot
 lcd $TEMPMOUNT
 copy-in . /
-__EOF__
+__EOF__ > /dev/null
 
 
 rm -r $TEMPMOUNT
