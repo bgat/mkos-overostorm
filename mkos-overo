@@ -135,7 +135,7 @@ PART1CYL=11
 { echo ,$PART1CYL,0xc,*; echo ,,,-; } \
     | $SFDISK -D -H $HEADS -S $SECTORSPERCYLINDER -C $CYLINDERS $IMAGE 2>&1 > /dev/null
 
-$GUESTFISH -a $IMAGE <<__EOF__
+$GUESTFISH -a $IMAGE 2>&1 > /dev/null <<__EOF__
 run
 list-partitions
 mkfs-opts msdos /dev/vda1
@@ -145,7 +145,7 @@ mkdir /boot
 mount /dev/vda1 /boot
 lcd $TEMPMOUNT
 copy-in . /
-__EOF__ > /dev/null
+__EOF__
 
 
 rm -r $TEMPMOUNT
