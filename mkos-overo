@@ -8,10 +8,10 @@ set -e -u
 # recreate the image by hand using the notes in this script
 # and the directory tarball.
 #
-# In practice, the Pragmatux tools will auto-expand this image during
-# first boot, to fill the MMC device containg it.  The image emitted
-# by this tool is therefore kept as small as possible to facilitate
-# low-bandwidth distribution.
+# In practice, the Pragmatux tools will (often) auto-expand this image
+# during first boot, to fill the MMC device containg it.  The image
+# emitted by this tool is therefore kept as small as possible to
+# facilitate low-bandwidth distribution.
 #
 # For reference, this script creates a disk image similar to what you
 # would get with the following commands:
@@ -114,6 +114,9 @@ MULTISTRAP=/usr/sbin/multistrap
 
 $MULTISTRAP -f $TEMPCONFIG -d $TEMPMOUNT
 
+echo "Creating ${TARFILE}..."
+tar czf $TARFILE -C $TEMPMOUNT .
+
 # don't change these unless you know what you're doing...
 SFDISK=/sbin/sfdisk
 SECTORBYTES=512
@@ -122,6 +125,7 @@ HEADS=255
 
 CYLINDERS=`echo $SIZE/$HEADS/$SECTORSPERCYLINDER/$SECTORBYTES | bc`
 
+echo "Creating ${IMAGE}..."
 truncate --size=$SIZE $IMAGE
 
 # TODO: the "11" below is the number of cylinders (?) of the first
@@ -131,7 +135,6 @@ PART1CYL=11
 { echo ,$PART1CYL,0xc,*; echo ,,,-; } \
     | $SFDISK -D -H $HEADS -S $SECTORSPERCYLINDER -C $CYLINDERS $IMAGE > /dev/null
 
-# TODO: what if the copy-in doesn't fit?
 $GUESTFISH -a $IMAGE <<__EOF__
 run
 list-partitions
@@ -142,11 +145,8 @@ mkdir /boot
 mount /dev/vda1 /boot
 lcd $TEMPMOUNT
 copy-in . /
-ll /boot
-ll /
 __EOF__
 
-tar czf $TARFILE -C $TEMPMOUNT .
 
 rm -r $TEMPMOUNT
 rm $TEMPCONFIG
