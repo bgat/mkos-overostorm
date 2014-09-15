@@ -1,0 +1,3 @@
+mkos-boneblack usr/bin
+default.mstrap preferences usr/share/mkos-boneblack
+README-mkcard.sh usr/share/mkos-boneblack
