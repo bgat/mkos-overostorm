@@ -9,6 +9,6 @@ Vcs-Browser: https://github.com/bgat/mkos-overostorm.git
 
 Package: mkos-overostorm
 Architecture: all
-Depends: multistrap, util-linux, guestfish, bc, ${misc:Depends}
-Description: Composes filesystem images for Gumstix Overo Storm
- Composes a filesystem image for Gumstix Overo Storm.
+Depends: mkos-mlo-common, ${misc:Depends}
+Description: Compose filesystem images for Gumstix Overo Storm
+ Compose a filesystem image for the Gumstix Overo Storm target
