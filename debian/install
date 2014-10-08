@@ -1,3 +1,2 @@
 mkos-overostorm usr/bin
 default.mstrap preferences usr/share/mkos-overostorm
-README-mkcard.sh usr/share/mkos-overostorm
