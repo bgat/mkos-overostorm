@@ -5,9 +5,9 @@ unpack=true
 cleanup=true
 omitrequired=true
 markauto=true
-bootstrap=ptux emdebian debian
+bootstrap=ptux debian
 aptsources=
-aptpreferences=/usr/share/mkos-boneblack/preferences
+aptpreferences=/usr/share/mkos-overostorm/preferences
 
 [ptux]
 source=http://packages.pragmatux.org/device
@@ -15,10 +15,6 @@ suite=3.0
 components=main
 packages={{device-package}}
 
-[emdebian]
-source=http://emdebian.org/grip
-suite=wheezy-grip
-
 [debian]
-source=http://cdn.debian.net/debian
+source=http://ftp.us.debian.org/debian
 suite=wheezy
