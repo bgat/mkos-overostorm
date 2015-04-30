@@ -11,10 +11,10 @@ aptpreferences=/usr/share/mkos-overostorm/preferences
 
 [ptux]
 source=http://packages.pragmatux.org/device
-suite=3.0
+suite=4.0
 components=main
 packages={{device-package}}
 
 [debian]
 source=http://ftp.us.debian.org/debian
-suite=wheezy
+suite=jessie
