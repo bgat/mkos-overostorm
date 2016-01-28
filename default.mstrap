@@ -18,3 +18,4 @@ packages={{device-package}}
 [debian]
 source=http://ftp.us.debian.org/debian
 suite=jessie
+components=main contrib non-free
